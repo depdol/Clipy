@@ -1,9 +1,13 @@
 //
 //  MenuManager.swift
-//  Clipy
 //
-//  Created by 古林俊佑 on 2016/03/08.
-//  Copyright (c) 2016年 Shunsuke Furubayashi. All rights reserved.
+//  Clipy
+//  GitHub: https://github.com/clipy
+//  HP: https://clipy-app.com
+//
+//  Created by Econa77 on 2016/03/08.
+//
+//  Copyright © 2015-2018 Clipy Project.
 //
 
 import Cocoa
@@ -23,8 +27,8 @@ final class MenuManager: NSObject {
     // StatusMenu
     fileprivate var statusItem: NSStatusItem?
     // Icon Cache
-    fileprivate let folderIcon = NSImage(assetIdentifier: .iconFolder)
-    fileprivate let snippetIcon = NSImage(assetIdentifier: .iconText)
+    fileprivate let folderIcon = Asset.Common.iconFolder.image
+    fileprivate let snippetIcon = Asset.Common.iconText.image
     // Other
     fileprivate let disposeBag = DisposeBag()
     fileprivate let notificationCenter = NotificationCenter.default
@@ -67,7 +71,7 @@ extension MenuManager {
         case .snippet:
             menu = snippetMenu
         }
-        menu?.popUp(positioning: nil, at: NSEvent.mouseLocation(), in: nil)
+        menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
     func popUpSnippetFolder(_ folder: CPYFolder) {
@@ -86,29 +90,28 @@ extension MenuManager {
                 folderMenu.addItem(subMenuItem)
                 index += 1
             }
-        folderMenu.popUp(positioning: nil, at: NSEvent.mouseLocation(), in: nil)
+        folderMenu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 }
 
 // MARK: - Binding
-fileprivate extension MenuManager {
-    // swiftlint:disable function_body_length
-    fileprivate func bind() {
+private extension MenuManager {
+    func bind() {
         // Realm Notification
         clipToken = realm.objects(CPYClip.self)
-                        .addNotificationBlock { [weak self] _ in
+                        .observe { [weak self] _ in
                             DispatchQueue.main.async { [weak self] in
                                 self?.createClipMenu()
                             }
                         }
         snippetToken = realm.objects(CPYFolder.self)
-                        .addNotificationBlock { [weak self] _ in
+                        .observe { [weak self] _ in
                             DispatchQueue.main.async { [weak self] in
                                 self?.createClipMenu()
                             }
                         }
         // Menu icon
-        AppEnvironment.current.defaults.rx.observe(Int.self, Constants.UserDefaults.showStatusItem)
+        AppEnvironment.current.defaults.rx.observe(Int.self, Constants.UserDefaults.showStatusItem, retainSelf: false)
             .filterNil()
             .asDriver(onErrorDriveWith: .empty())
             .drive(onNext: { [weak self] key in
@@ -116,7 +119,7 @@ fileprivate extension MenuManager {
             })
             .disposed(by: disposeBag)
         // Sort clips
-        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.reorderClipsAfterPasting, options: [.new])
+        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.reorderClipsAfterPasting, options: [.new], retainSelf: false)
             .filterNil()
             .asDriver(onErrorDriveWith: .empty())
             .drive(onNext: { [weak self] _ in
@@ -133,20 +136,19 @@ fileprivate extension MenuManager {
             .disposed(by: disposeBag)
         // Observe change preference settings
         let defaults = AppEnvironment.current.defaults
-        Observable.of(defaults.rx.observe(Bool.self, Constants.UserDefaults.addClearHistoryMenuItem, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Int.self, Constants.UserDefaults.maxHistorySize, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.showIconInTheMenu, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInline, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInsideFolder, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Int.self, Constants.UserDefaults.maxMenuItemTitleLength, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsTitleStartWithZero, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsAreMarkedWithNumbers, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.showToolTipOnMenuItem, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.showImageInTheMenu, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.addNumericKeyEquivalents, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Int.self, Constants.UserDefaults.maxLengthOfToolTip, options: [.new]).mapVoidDistinctUntilChanged(),
-                      defaults.rx.observe(Bool.self, Constants.UserDefaults.showColorPreviewInTheMenu, options: [.new]).mapVoidDistinctUntilChanged())
-            .merge()
+        Observable.merge(defaults.rx.observe(Bool.self, Constants.UserDefaults.addClearHistoryMenuItem, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Int.self, Constants.UserDefaults.maxHistorySize, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.showIconInTheMenu, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInline, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInsideFolder, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Int.self, Constants.UserDefaults.maxMenuItemTitleLength, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsTitleStartWithZero, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsAreMarkedWithNumbers, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.showToolTipOnMenuItem, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.showImageInTheMenu, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.addNumericKeyEquivalents, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Int.self, Constants.UserDefaults.maxLengthOfToolTip, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged(),
+                         defaults.rx.observe(Bool.self, Constants.UserDefaults.showColorPreviewInTheMenu, options: [.new], retainSelf: false).filterNil().mapVoidDistinctUntilChanged())
             .skip(1)
             .throttle(1, scheduler: MainScheduler.instance)
             .asDriver(onErrorDriveWith: .empty())
@@ -155,12 +157,11 @@ fileprivate extension MenuManager {
             })
             .disposed(by: disposeBag)
     }
-    // swiftlint:enable function_body_length
 }
 
 // MARK: - Menus
-fileprivate extension MenuManager {
-    fileprivate func createClipMenu() {
+private extension MenuManager {
+     func createClipMenu() {
         clipMenu = NSMenu(title: Constants.Application.name)
         historyMenu = NSMenu(title: Constants.Menu.history)
         snippetMenu = NSMenu(title: Constants.Menu.snippet)
@@ -174,22 +175,22 @@ fileprivate extension MenuManager {
         clipMenu?.addItem(NSMenuItem.separator())
 
         if AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.addClearHistoryMenuItem) {
-            clipMenu?.addItem(NSMenuItem(title: LocalizedString.clearHistory.value, action: #selector(AppDelegate.clearAllHistory)))
+            clipMenu?.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
         }
 
-        clipMenu?.addItem(NSMenuItem(title: LocalizedString.editSnippets.value, action: #selector(AppDelegate.showSnippetEditorWindow)))
-        clipMenu?.addItem(NSMenuItem(title: LocalizedString.preference.value, action: #selector(AppDelegate.showPreferenceWindow)))
+        clipMenu?.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
+        clipMenu?.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
         clipMenu?.addItem(NSMenuItem.separator())
-        clipMenu?.addItem(NSMenuItem(title: LocalizedString.quitClipy.value, action: #selector(AppDelegate.terminateApplication)))
+        clipMenu?.addItem(NSMenuItem(title: L10n.quitClipy, action: #selector(AppDelegate.terminate)))
 
         statusItem?.menu = clipMenu
     }
 
-    fileprivate func menuItemTitle(_ title: String, listNumber: NSInteger, isMarkWithNumber: Bool) -> String {
+    func menuItemTitle(_ title: String, listNumber: NSInteger, isMarkWithNumber: Bool) -> String {
         return (isMarkWithNumber) ? "\(listNumber). \(title)" : title
     }
 
-    fileprivate func makeSubmenuItem(_ count: Int, start: Int, end: Int, numberOfItems: Int) -> NSMenuItem {
+    func makeSubmenuItem(_ count: Int, start: Int, end: Int, numberOfItems: Int) -> NSMenuItem {
         var count = count
         if start == 0 {
             count -= 1
@@ -202,7 +203,7 @@ fileprivate extension MenuManager {
         return makeSubmenuItem(menuItemTitle)
     }
 
-    fileprivate func makeSubmenuItem(_ title: String) -> NSMenuItem {
+    func makeSubmenuItem(_ title: String) -> NSMenuItem {
         let subMenu = NSMenu(title: "")
         let subMenuItem = NSMenuItem(title: title, action: nil)
         subMenuItem.submenu = subMenu
@@ -210,7 +211,7 @@ fileprivate extension MenuManager {
         return subMenuItem
     }
 
-    fileprivate func incrementListNumber(_ listNumber: NSInteger, max: NSInteger, start: NSInteger) -> NSInteger {
+    func incrementListNumber(_ listNumber: NSInteger, max: NSInteger, start: NSInteger) -> NSInteger {
         var listNumber = listNumber + 1
         if listNumber == max && max == 10 && start == 1 {
             listNumber = 0
@@ -218,7 +219,7 @@ fileprivate extension MenuManager {
         return listNumber
     }
 
-    fileprivate func trimTitle(_ title: String?) -> String {
+    func trimTitle(_ title: String?) -> String {
         if title == nil { return "" }
         let theString = title!.trimmingCharacters(in: .whitespacesAndNewlines) as NSString
 
@@ -229,12 +230,12 @@ fileprivate extension MenuManager {
         var titleString = (lineEnd == theString.length) ? theString as String : theString.substring(to: contentsEnd)
 
         var maxMenuItemTitleLength = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxMenuItemTitleLength)
-        if maxMenuItemTitleLength < shortenSymbol.characters.count {
-            maxMenuItemTitleLength = shortenSymbol.characters.count
+        if maxMenuItemTitleLength < shortenSymbol.count {
+            maxMenuItemTitleLength = shortenSymbol.count
         }
 
         if titleString.utf16.count > maxMenuItemTitleLength {
-            titleString = (titleString as NSString).substring(to: maxMenuItemTitleLength - shortenSymbol.characters.count) + shortenSymbol
+            titleString = (titleString as NSString).substring(to: maxMenuItemTitleLength - shortenSymbol.count) + shortenSymbol
         }
 
         return titleString as String
@@ -242,14 +243,14 @@ fileprivate extension MenuManager {
 }
 
 // MARK: - Clips
-fileprivate extension MenuManager {
-    fileprivate func addHistoryItems(_ menu: NSMenu) {
+private extension MenuManager {
+    func addHistoryItems(_ menu: NSMenu) {
         let placeInLine = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.numberOfItemsPlaceInline)
         let placeInsideFolder = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.numberOfItemsPlaceInsideFolder)
         let maxHistory = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize)
 
         // History title
-        let labelItem = NSMenuItem(title: LocalizedString.history.value, action: nil)
+        let labelItem = NSMenuItem(title: L10n.history, action: nil)
         labelItem.isEnabled = false
         menu.addItem(labelItem)
 
@@ -295,7 +296,7 @@ fileprivate extension MenuManager {
         }
     }
 
-    fileprivate func makeClipMenuItem(_ clip: CPYClip, index: Int, listNumber: Int) -> NSMenuItem {
+    func makeClipMenuItem(_ clip: CPYClip, index: Int, listNumber: Int) -> NSMenuItem {
         let isMarkWithNumber = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.menuItemsAreMarkedWithNumbers)
         let isShowToolTip = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.showToolTipOnMenuItem)
         let isShowImage = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.showImageInTheMenu)
@@ -314,7 +315,7 @@ fileprivate extension MenuManager {
             keyEquivalent = "\(shortCutNumber)"
         }
 
-        let primaryPboardType = clip.primaryType
+        let primaryPboardType = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
         let clipString = clip.title
         let title = trimTitle(clipString)
         let titleWithMark = menuItemTitle(title, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
@@ -324,27 +325,27 @@ fileprivate extension MenuManager {
 
         if isShowToolTip {
             let maxLengthOfToolTip = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxLengthOfToolTip)
-            let toIndex = (clipString.characters.count < maxLengthOfToolTip) ? clipString.characters.count : maxLengthOfToolTip
+            let toIndex = (clipString.count < maxLengthOfToolTip) ? clipString.count : maxLengthOfToolTip
             menuItem.toolTip = (clipString as NSString).substring(to: toIndex)
         }
 
-        if primaryPboardType == NSTIFFPboardType {
+        if primaryPboardType == .deprecatedTIFF {
             menuItem.title = menuItemTitle("(Image)", listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
-        } else if primaryPboardType == NSPDFPboardType {
+        } else if primaryPboardType == .deprecatedPDF {
             menuItem.title = menuItemTitle("(PDF)", listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
-        } else if primaryPboardType == NSFilenamesPboardType && title.isEmpty {
+        } else if primaryPboardType == .deprecatedFilenames && title.isEmpty {
             menuItem.title = menuItemTitle("(Filenames)", listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
         }
 
         if !clip.thumbnailPath.isEmpty && !clip.isColorCode && isShowImage {
-            PINCache.shared().object(forKey: clip.thumbnailPath, block: { [weak menuItem] (_, _, object) in
+            PINCache.shared().object(forKey: clip.thumbnailPath, block: { [weak menuItem] _, _, object in
                 DispatchQueue.main.async {
                     menuItem?.image = object as? NSImage
                 }
             })
         }
         if !clip.thumbnailPath.isEmpty && clip.isColorCode && isShowColorCode {
-            PINCache.shared().object(forKey: clip.thumbnailPath, block: { [weak menuItem] (_, _, object) in
+            PINCache.shared().object(forKey: clip.thumbnailPath, block: { [weak menuItem] _, _, object in
                 DispatchQueue.main.async {
                     menuItem?.image = object as? NSImage
                 }
@@ -359,13 +360,13 @@ fileprivate extension MenuManager {
 private extension MenuManager {
     func addSnippetItems(_ menu: NSMenu, separateMenu: Bool) {
         let folderResults = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-        if folderResults.count == 0 { return }
+        guard !folderResults.isEmpty else { return }
         if separateMenu {
             menu.addItem(NSMenuItem.separator())
         }
 
         // Snippet title
-        let labelItem = NSMenuItem(title: LocalizedString.snippet.value, action: nil)
+        let labelItem = NSMenuItem(title: L10n.snippet, action: nil)
         labelItem.isEnabled = false
         menu.addItem(labelItem)
 
@@ -419,14 +420,14 @@ private extension MenuManager {
         let image: NSImage?
         switch type {
         case .black:
-            image = NSImage(assetIdentifier: .menuBlack)
+            image = Asset.StatusIcon.statusbarMenuBlack.image
         case .white:
-            image = NSImage(assetIdentifier: .menuWhite)
+            image = Asset.StatusIcon.statusbarMenuWhite.image
         case .none: return
         }
         image?.isTemplate = true
 
-        statusItem = NSStatusBar.system().statusItem(withLength: -1)
+        statusItem = NSStatusBar.system.statusItem(withLength: -1)
         statusItem?.image = image
         statusItem?.highlightMode = true
         statusItem?.toolTip = "\(Constants.Application.name)\(Bundle.main.appVersion ?? "")"
@@ -435,7 +436,7 @@ private extension MenuManager {
 
     func removeStatusItem() {
         if let item = statusItem {
-            NSStatusBar.system().removeStatusItem(item)
+            NSStatusBar.system.removeStatusItem(item)
             statusItem = nil
         }
     }
